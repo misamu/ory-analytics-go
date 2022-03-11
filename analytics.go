@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -316,7 +317,7 @@ func (c *client) upload(b []byte) error {
 	}
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Add("Content-Length", string(len(b)))
+	req.Header.Add("Content-Length", strconv.Itoa(len(b)))
 	req.SetBasicAuth(c.key, "")
 
 	res, err := c.http.Do(req)
