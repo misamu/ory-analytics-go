@@ -33,3 +33,5 @@ _testmain.go
 
 # Artifacts
 tmp/*
+
+.idea
