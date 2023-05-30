@@ -2,9 +2,22 @@ package analytics
 
 import "testing"
 
-func TestTrackMissingEvent(t *testing.T) {
+func TestTrackValid(t *testing.T) {
+	page := Identify{
+		Type:         2,
+		DeploymentId: "TEST",
+		InstanceId:   "TEST",
+	}
+
+	if err := page.Validate(); err != nil {
+		t.Error("validating a valid track object failed:", page, err)
+	}
+}
+
+func TestTrackMissingInstanceId(t *testing.T) {
 	track := Track{
-		UserId: "1",
+		Type:         2,
+		DeploymentId: "TEST",
 	}
 
 	if err := track.Validate(); err == nil {
@@ -15,16 +28,17 @@ func TestTrackMissingEvent(t *testing.T) {
 
 	} else if e != (FieldError{
 		Type:  "analytics.Track",
-		Name:  "Event",
+		Name:  "InstanceId",
 		Value: "",
 	}) {
 		t.Error("invalid error value returned when validating track:", err)
 	}
 }
 
-func TestTrackMissingUserId(t *testing.T) {
+func TestTrackMissingDeploymentId(t *testing.T) {
 	track := Track{
-		Event: "1",
+		Type:       2,
+		InstanceId: "TEST",
 	}
 
 	if err := track.Validate(); err == nil {
@@ -35,31 +49,9 @@ func TestTrackMissingUserId(t *testing.T) {
 
 	} else if e != (FieldError{
 		Type:  "analytics.Track",
-		Name:  "UserId",
+		Name:  "DeploymentId",
 		Value: "",
 	}) {
 		t.Error("invalid error value returned when validating track:", err)
-	}
-}
-
-func TestTrackValidWithUserId(t *testing.T) {
-	track := Track{
-		Event:  "1",
-		UserId: "2",
-	}
-
-	if err := track.Validate(); err != nil {
-		t.Error("validating a valid track object failed:", track, err)
-	}
-}
-
-func TestTrackValidWithAnonymousId(t *testing.T) {
-	track := Track{
-		Event:       "1",
-		AnonymousId: "2",
-	}
-
-	if err := track.Validate(); err != nil {
-		t.Error("validating a valid track object failed:", track, err)
 	}
 }

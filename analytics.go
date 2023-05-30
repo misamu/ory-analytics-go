@@ -17,6 +17,16 @@ import (
 const Version = "3.0.0"
 const unimplementedError = "not implemented"
 
+// PayloadVersion that identifies how these payloads should be parsed when analyzing.
+// When something changes in the payloads sent document here the changes, increase the payload version and handle analyzer.
+// V1: Initial version
+const PayloadVersion = 1
+
+// TypeIdentify Type, TypeTrack Type, TypePage Type constants to identify payload type
+const TypeIdentify = 1
+const TypeTrack = 2
+const TypePage = 3
+
 // This interface is the main API exposed by the analytics package.
 // Values that satsify this interface are returned by the client constructors
 // provided by the package and provide a way to send messages via the HTTP API.
@@ -108,27 +118,12 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 
 func dereferenceMessage(msg Message) Message {
 	switch m := msg.(type) {
-	case *Alias:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Group:
-		if m == nil {
-			return nil
-		}
-		return *m
 	case *Identify:
 		if m == nil {
 			return nil
 		}
 		return *m
 	case *Page:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Screen:
 		if m == nil {
 			return nil
 		}
@@ -153,40 +148,25 @@ func (c *client) Enqueue(msg Message) (err error) {
 	var ts = c.now()
 
 	switch m := msg.(type) {
-	case Alias:
-		m.Type = "alias"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Group:
-		m.Type = "group"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
 	case Identify:
-		m.Type = "identify"
+		m.Type = TypeIdentify
+		m.PayloadVersion = PayloadVersion
 		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Page:
-		m.Type = "page"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Screen:
-		m.Type = "screen"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Timestamp = ts
 		msg = m
 
 	case Track:
-		m.Type = "track"
+		m.Type = TypeTrack
+		m.PayloadVersion = PayloadVersion
 		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Timestamp = ts
+		msg = m
+
+	case Page:
+		m.Type = TypePage
+		m.PayloadVersion = PayloadVersion
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = ts
 		msg = m
 
 	default:
@@ -252,7 +232,6 @@ func (c *client) send(msgs []message) {
 		MessageId: c.uid(),
 		SentAt:    c.now(),
 		Messages:  msgs,
-		Context:   c.DefaultContext,
 	}
 
 	var buf bytes.Buffer
@@ -435,7 +414,6 @@ func (c *client) maxBatchBytes() int {
 	b, _ := json.Marshal(batch{
 		MessageId: c.uid(),
 		SentAt:    c.now(),
-		Context:   c.DefaultContext,
 	})
 	return int(c.BatchMaxSize) - len(b)
 }
