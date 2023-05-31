@@ -1,4 +1,4 @@
-module github.com/ory/analytics-go/v4
+module github.com/ory/analytics-go/v5
 
 go 1.14
 
